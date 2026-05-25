@@ -51,4 +51,5 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResult:
 
 @app.post("/api/report", response_model=AnalysisResult)
 async def report(request: AnalyzeRequest) -> AnalysisResult:
+    # Kept as a stable external route name for frontend integrations.
     return await analyze(request)

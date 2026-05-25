@@ -10,7 +10,7 @@ FastAPI backend for a meeting equity auditor.
 ## Quickstart
 
 ```bash
-cd /home/runner/work/bias-mirror/bias-mirror
+cd bias-mirror
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]

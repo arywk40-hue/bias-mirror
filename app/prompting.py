@@ -25,7 +25,7 @@ def build_analysis_prompt(transcript: str) -> str:
         "5. question_equity: { questions_asked_to: { speaker: count } }\n"
         "6. summary_narrative: \"2-3 sentence plain-English team dynamics summary\"\n"
         "7. nudges: [\"3 actionable suggestions for the next meeting\"]\n\n"
-        "Do not wrap JSON in markdown fences and do not include extra keys.\n\n"
+        "Return JSON only (markdown fences are tolerated but discouraged) and do not include extra keys.\n\n"
         f"Transcript:\n{transcript}"
     )
 
@@ -33,8 +33,8 @@ def build_analysis_prompt(transcript: str) -> str:
 def extract_json_object(text: str) -> dict:
     text = text.strip()
     if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\\s*", "", text)
-        text = re.sub(r"\\s*```$", "", text)
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
 
     start = text.find("{")
     end = text.rfind("}")
