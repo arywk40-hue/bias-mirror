@@ -5,6 +5,8 @@ import httpx
 from app.models import TranscriptResponse, Utterance
 
 ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com/v2"
+MAX_POLLING_ATTEMPTS = 150
+POLL_INTERVAL_SECONDS = 2
 
 
 class AssemblyAIClient:
@@ -33,9 +35,8 @@ class AssemblyAIClient:
             transcript_resp.raise_for_status()
             transcript_id = transcript_resp.json()["id"]
 
-            max_polls = 150
             polls = 0
-            while polls < max_polls:
+            while polls < MAX_POLLING_ATTEMPTS:
                 polls += 1
                 poll_resp = await client.get(
                     f"{ASSEMBLYAI_BASE_URL}/transcript/{transcript_id}",
@@ -57,5 +58,5 @@ class AssemblyAIClient:
                     return TranscriptResponse(utterances=utterances)
                 if status == "error":
                     raise RuntimeError(payload.get("error", "AssemblyAI transcription failed"))
-                await asyncio.sleep(2)
+                await asyncio.sleep(POLL_INTERVAL_SECONDS)
             raise RuntimeError("Transcription timed out after 5 minutes")
