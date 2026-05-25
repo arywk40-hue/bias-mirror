@@ -37,20 +37,16 @@ class AnthropicClient:
                 try:
                     response = await client.post(ANTHROPIC_URL, headers=self._headers, json=payload)
                     response.raise_for_status()
+                    data = response.json()
+                    content = data.get("content", [])
+                    text_blocks = [item.get("text", "") for item in content if item.get("type") == "text"]
+                    combined_text = "\n".join(text_blocks)
+
+                    structured = extract_json_object(combined_text)
+                    return AnalysisResult.model_validate(structured)
                 except httpx.HTTPStatusError as exc:
                     if exc.response.status_code != ANTHROPIC_OVERLOAD_STATUS_CODE:
                         raise
                     if attempt == MAX_ATTEMPTS - 1:
                         raise
                     await asyncio.sleep(RETRY_DELAY_SECONDS)
-                    continue
-
-                data = response.json()
-                content = data.get("content", [])
-                text_blocks = [item.get("text", "") for item in content if item.get("type") == "text"]
-                combined_text = "\n".join(text_blocks)
-
-                structured = extract_json_object(combined_text)
-                return AnalysisResult.model_validate(structured)
-
-        raise RuntimeError("Anthropic request failed after retries")
