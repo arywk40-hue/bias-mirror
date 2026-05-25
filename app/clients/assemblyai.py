@@ -36,6 +36,7 @@ class AssemblyAIClient:
             transcript_id = transcript_resp.json()["id"]
 
             polls = 0
+            timeout_seconds = MAX_POLLING_ATTEMPTS * POLL_INTERVAL_SECONDS
             while polls < MAX_POLLING_ATTEMPTS:
                 polls += 1
                 poll_resp = await client.get(
@@ -59,4 +60,4 @@ class AssemblyAIClient:
                 if status == "error":
                     raise RuntimeError(payload.get("error", "AssemblyAI transcription failed"))
                 await asyncio.sleep(POLL_INTERVAL_SECONDS)
-            raise RuntimeError("Transcription timed out after 5 minutes")
+            raise RuntimeError(f"Transcription timed out after {timeout_seconds} seconds")

@@ -9,7 +9,7 @@ from app.prompting import build_analysis_prompt, extract_json_object
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 MAX_ATTEMPTS = 2
 RETRY_DELAY_SECONDS = 3
-RETRY_STATUS_CODE = 529
+ANTHROPIC_OVERLOAD_STATUS_CODE = 529
 
 
 class AnthropicClient:
@@ -39,7 +39,7 @@ class AnthropicClient:
                     response.raise_for_status()
                     break
                 except httpx.HTTPStatusError as exc:
-                    if attempt == MAX_ATTEMPTS - 1 or exc.response.status_code != RETRY_STATUS_CODE:
+                    if attempt == MAX_ATTEMPTS - 1 or exc.response.status_code != ANTHROPIC_OVERLOAD_STATUS_CODE:
                         raise
                     await asyncio.sleep(RETRY_DELAY_SECONDS)
 
