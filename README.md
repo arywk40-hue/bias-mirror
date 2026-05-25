@@ -22,9 +22,11 @@ uvicorn app.main:app --reload
 ## Endpoints
 
 - `GET /health`
+- `GET /` (static demo UI)
 - `POST /api/transcribe` (multipart form with `file`)
 - `POST /api/analyze` (JSON body with diarized utterances)
 - `POST /api/report` (alias of analyze)
+- `POST /api/full-report` (upload audio and receive analysis report)
 
 ### Analyze payload example
 

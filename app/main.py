@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.clients.anthropic_client import AnthropicClient
 from app.clients.assemblyai import AssemblyAIClient
@@ -18,6 +19,17 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def validate_config() -> None:
+    missing = []
+    if not settings.assemblyai_api_key:
+        missing.append("ASSEMBLYAI_API_KEY")
+    if not settings.anthropic_api_key:
+        missing.append("ANTHROPIC_API_KEY")
+    if missing:
+        raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -29,6 +41,8 @@ async def transcribe(file: UploadFile = File(...), speaker_labels: bool = True) 
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not configured")
 
     audio = await file.read()
+    if len(audio) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large (max 50MB)")
     client = AssemblyAIClient(api_key=settings.assemblyai_api_key)
     try:
         return await client.transcribe(audio_bytes=audio, speaker_labels=speaker_labels)
@@ -53,3 +67,13 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResult:
 async def report(request: AnalyzeRequest) -> AnalysisResult:
     # Kept as a stable external route name for frontend integrations.
     return await analyze(request)
+
+
+@app.post("/api/full-report", response_model=AnalysisResult)
+async def full_report(file: UploadFile = File(...), speaker_labels: bool = True) -> AnalysisResult:
+    transcript_resp = await transcribe(file=file, speaker_labels=speaker_labels)
+    analyze_req = AnalyzeRequest(utterances=transcript_resp.utterances)
+    return await analyze(analyze_req)
+
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

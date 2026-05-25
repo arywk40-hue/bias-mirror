@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 
 from app.config import settings
@@ -27,9 +29,20 @@ class AnthropicClient:
             "messages": [{"role": "user", "content": build_analysis_prompt(transcript)}],
         }
 
+        response: httpx.Response | None = None
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(ANTHROPIC_URL, headers=self._headers, json=payload)
-            response.raise_for_status()
+            for attempt in range(2):
+                try:
+                    response = await client.post(ANTHROPIC_URL, headers=self._headers, json=payload)
+                    response.raise_for_status()
+                    break
+                except httpx.HTTPStatusError as exc:
+                    if attempt == 1 or exc.response.status_code != 529:
+                        raise
+                    await asyncio.sleep(3)
+
+        if response is None:
+            raise RuntimeError("Anthropic request did not return a response")
 
         data = response.json()
         content = data.get("content", [])
