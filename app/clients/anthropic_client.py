@@ -39,7 +39,9 @@ class AnthropicClient:
                     response.raise_for_status()
                     break
                 except httpx.HTTPStatusError as exc:
-                    if attempt == MAX_ATTEMPTS - 1 or exc.response.status_code != ANTHROPIC_OVERLOAD_STATUS_CODE:
+                    if exc.response.status_code != ANTHROPIC_OVERLOAD_STATUS_CODE:
+                        raise
+                    if attempt == MAX_ATTEMPTS - 1:
                         raise
                     await asyncio.sleep(RETRY_DELAY_SECONDS)
 
